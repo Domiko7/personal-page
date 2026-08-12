@@ -1,6 +1,6 @@
 ---
 title: "How to Build a Cheap DIY Seismometer"
-date: "2026-08-03"
+date: "2026-08-12"
 description: "Learn how to build a cheap DIY seismometer from scratch!"
 ---
 
@@ -58,7 +58,7 @@ An ADC converts the analog signals from your sensor into digital data for your c
 * If you want to maximize resolution and detection range, you can opt for a **32-bit ADC**.
 
 ### Pinout Mapping (ESP32 + ADS1256)
-If you are using an ESP32 micro-controller with an ADS1256 ADC, here is the default pin mapping used in firmware configuration:
+If you are using an ESP32 microcontroller with an ADS1256 ADC, here is the default pin mapping used in firmware configuration:
 
 | ESP32 Pin | Function / ADS1256 Pin |
 | :--- | :--- |
@@ -72,47 +72,54 @@ If you are using an ESP32 micro-controller with an ADS1256 ADC, here is the defa
 
 ---
 
-## Computer / Microcontroller & Software
+## Catching Teleseismic Activity: Digital Filtering & Response Extension
 
-Processing and saving your seismic data can be done in a few ways:
+A standard 4.5 Hz geophone naturally attenuates low frequencies below 4.5 Hz. Teleseismic quakes (distant earthquakes across the globe) typically produce signals below 1 Hz.
 
-1. **Real-time Data Only:** A standard microcontroller (e.g., ESP32) is all you need.
-2. **Real-time + Local Storage:** You can attach an SD card module to a microcontroller to log past data locally. *(Note: Accessing this data remotely can cause performance lag.)*
-3. **Real-time + Remote Access + High Performance:** Use a single-board computer (SBC) like a Raspberry Pi, a spare PC, or a cloud server.
+To detect these distant events with a 4.5 Hz sensor, we use a combination of High-Pass Pre-Processing (to strip DC offset and baseline noise) and Direct Form I (DF1) Equalization to extend frequency response down into the low-frequency spectrum.
 
-### Software Platforms
+### C Implementation
 
-My preferred approach is using a server alongside software I developed called **NexaSeis** (releasing soon!). NexaSeis allows you to host **multiple stations** on a free Oracle server instance. With this setup, all you need on-site is an **ESP32 + ADC + Sensor**.
+```c
+#ifndef __FILTER_H
+#define __FILTER_H
 
-You can check out the project at [nexaseis.domiko.dev](https://nexaseis.domiko.dev).
+#include <math.h>
+#include <stdint.h>
+#include <string.h>
 
-While NexaSeis is still in active development, here are several alternative self-hosted software platforms you can use today:
+#include "settings.h"
 
-* [AnyShake (Observer)](https://anyshake.org/)
-* [jAmaSeis](https://www.iris.edu/hq/jamaseis/)
-* [AmaSeis](https://www.iris.edu/hq/sis/resources/software)
-* [ZejfSeis](https://github.com/xspanger3770/ZejfSeis)
+#if ENABLE_COMPENSATION
+  const float COMPENSATION_COEFFS_B[] = {1.1565880101192887, -1.8583260658969014, 0.7775337237560691};
+  const float COMPENSATION_COEFFS_A[] = {1.0, -1.893528942802451, 0.8989188569698081};
+#endif
 
-*If you want to use AnyShake firmware on an ESP32, you can check out my repository: [Domiko7/ESP32-anyshake-explorer](https://github.com/Domiko7/ESP32-anyshake-explorer)*
+#define IIR_DF1_ORDER 3
 
----
+typedef struct {
+  float b[IIR_DF1_ORDER];
+  float a[IIR_DF1_ORDER];
+  float x_h[IIR_DF1_ORDER];
+  float y_h[IIR_DF1_ORDER];
+} filter_iir_df1_t;
 
-## Join the NexaSeis Network
+const float PRE_PROC_HPF_COEFFS[][6] = {
+  {0.98371517, -1.96743035, 0.98371517, 1.0, -1.97689135, 0.97704745},
+  {1.0, -2.0, 1.0, 1.0, -1.99027124, 0.9904284}
+};
 
-I currently operate a NexaSeis server and run my own citizen-science seismic network:
+#define IIR_SOS_SECTIONS 2
 
-> **Citation:** Dominik Stempel. (2026). *NexaSeis Collaborative Network* [Data set]. International Federation of Digital Seismograph Networks. https://doi.org/10.7914/fa5t-3w59
+typedef struct {
+  float sos[IIR_SOS_SECTIONS][6];
+  float state[IIR_SOS_SECTIONS][2];
+} filter_iir_sos_t;
 
-If you want a plug-and-play solution without managing server software yourself, I would be happy to host your station's data on my server network! 
+void filter_iir_df1_new(filter_iir_df1_t* filter, const float* b, const float* a);
+void apply_data_compensation(int32_t* arr, uint16_t len, filter_iir_df1_t* df1_filter);
+void filter_iir_sos_new(filter_iir_sos_t* filter, const float sos[2][6]);
+void filter_iir_sos_apply(filter_iir_sos_t* filter, float* input, uint16_t input_size, float* output);
+void apply_data_pre_processing(int32_t* arr, uint16_t len, filter_iir_sos_t* pre_processing_filter);
 
-To add your station to the network, reach out to me via:
-* **Discord:** Join the community [discord server](https://discord.domiko.dev) 
-* **Email:** [mail@domiko.dev](mailto:mail@domiko.dev)
-
-> [!WARNING]
-> Hosted server availability is maintained on a best-effort basis. If server access is interrupted, you may need to host your station software locally.
-
----
-
-> [!NOTE]
-> Detailed physical assembly steps and firmware flashing instructions will be added in a future update!
+#endif
