@@ -78,7 +78,7 @@ A standard 4.5 Hz geophone naturally attenuates low frequencies below 4.5 Hz. Te
 
 To detect these distant events with a 4.5 Hz sensor, we use a combination of High-Pass Pre-Processing (to strip DC offset and baseline noise) and Direct Form I (DF1) Equalization to extend frequency response down into the low-frequency spectrum.
 
-Digital filtering implementation for this setup is taken directly from my old [ESP32 AnyShake Explorer firmware repository](https://github.com/Domiko7/ESP32-anyshake-explorer), which provides the routines for both second-order sections (SOS) pre-processing and DF1 response extension.
+The digital filtering implementation used for this setup is taken directly from the [AnyShake Explorer v1 repository](https://github.com/anyshake/explorer/tree/v1), which provides the software routines for both second-order sections (SOS) pre-processing and DF1 response extension.
 
 > [!WARNING]
 > **A Note on Waveform Distortion:**
