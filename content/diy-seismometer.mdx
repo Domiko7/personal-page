@@ -1,0 +1,118 @@
+---
+title: "How to Build a Cheap DIY Seismometer"
+date: "2026-08-03"
+description: "Learn how to build a cheap DIY seismometer from scratch!"
+---
+
+Welcome! Today, I'll show you how to build a cheap DIY seismometer from scratch.
+
+## Choosing the Right Seismometer
+
+There are many types of seismometers out there, but for a DIY build, I recommend starting with one of these three:
+
+* **Accelerometer** (Strong Motion)
+* **Short-Period Seismograph**
+* **Broadband Seismograph**
+
+The differences between these are quite significant. Let's break down each option:
+
+### Accelerometer
+* **Cost:** Extremely cheap (starting around $3).
+* **Best for:** Locations where you frequently feel noticeable earthquakes, or if you don't care about capturing micro-quakes or teleseismic events.
+* **Sensor Recommendations:**
+  * **LSM6DS3:** Overall cheap and decent performance.
+  * **ADXL345:** Very affordable and standard performance.
+  * **ADXL355:** The best option in this category, though slightly more expensive.
+
+### Short-Period Seismograph
+* **Cost:** Relatively cheap ($35–$50).
+* **Best for:** Catching micro-quakes, regional earthquakes, and teleseismic interference (with appropriate filtering).
+* **Sensor Recommendation:** **4.5 Hz vertical geophone** (ideally rated at 100 V/m/s).
+
+> [!WARNING]
+> A standard 4.5 Hz geophone cannot catch raw teleseismic signals (which usually occur below 1 Hz) without specific filtering methods covered later in this guide.
+
+### Broadband Seismograph
+
+I don't recommend buying a commercial broadband seismometer due to the cost. However, if you really want one, your best option is to build your own!
+
+Because I struggled with building one myself, I won't cover it directly in this tutorial. Instead, here are some great resources online:
+
+* [Official ZejfSeis Tutorial](https://github.com/xspanger3770/ZejfSeis/blob/main/arduino/README.md)
+* [Seismic Net Equipment & Info](https://www.seismicnet.com/infoequip.html)
+
+> [!TIP]
+> You can build a multi-channel setup! For example, you can use a geophone for the vertical axis and an accelerometer module for horizontal axes.
+
+---
+
+## Required Components & Wiring
+
+Now that we've covered sensors, what else do you need? The rest of your hardware depends on what you already own and your overall goals.
+
+### Analog-to-Digital Converter (ADC)
+An ADC converts the analog signals from your sensor into digital data for your computer.
+
+* Some accelerometers (including the ones recommended above) have built-in ADCs.
+* For standalone sensors like geophones, you will need a separate ADC. A **24-bit ADC** is sufficient for most setups—I personally recommend the **ADS1256**.
+* If you want to maximize resolution and detection range, you can opt for a **32-bit ADC**.
+
+### Pinout Mapping (ESP32 + ADS1256)
+If you are using an ESP32 micro-controller with an ADS1256 ADC, here is the default pin mapping used in firmware configuration:
+
+| ESP32 Pin | Function / ADS1256 Pin |
+| :--- | :--- |
+| **GPIO 18** | SPI Clock (`SCK`) |
+| **GPIO 19** | SPI Master In / Slave Out (`MISO`) |
+| **GPIO 23** | SPI Master Out / Slave In (`MOSI`) |
+| **GPIO 5** | Chip Select (`CS`) |
+| **GPIO 16** | Data Ready (`DRDY`) |
+| *Not Connected* | Reset (`RST`) |
+| *Not Connected* | Sync (`SYNC`) |
+
+---
+
+## Computer / Microcontroller & Software
+
+Processing and saving your seismic data can be done in a few ways:
+
+1. **Real-time Data Only:** A standard microcontroller (e.g., ESP32) is all you need.
+2. **Real-time + Local Storage:** You can attach an SD card module to a microcontroller to log past data locally. *(Note: Accessing this data remotely can cause performance lag.)*
+3. **Real-time + Remote Access + High Performance:** Use a single-board computer (SBC) like a Raspberry Pi, a spare PC, or a cloud server.
+
+### Software Platforms
+
+My preferred approach is using a server alongside software I developed called **NexaSeis** (releasing soon!). NexaSeis allows you to host **multiple stations** on a free Oracle server instance. With this setup, all you need on-site is an **ESP32 + ADC + Sensor**.
+
+You can check out the project at [nexaseis.domiko.dev](https://nexaseis.domiko.dev).
+
+While NexaSeis is still in active development, here are several alternative self-hosted software platforms you can use today:
+
+* [AnyShake (Observer)](https://anyshake.org/)
+* [jAmaSeis](https://www.iris.edu/hq/jamaseis/)
+* [AmaSeis](https://www.iris.edu/hq/sis/resources/software)
+* [ZejfSeis](https://github.com/xspanger3770/ZejfSeis)
+
+*If you want to use AnyShake firmware on an ESP32, you can check out my repository: [Domiko7/ESP32-anyshake-explorer](https://github.com/Domiko7/ESP32-anyshake-explorer)*
+
+---
+
+## Join the NexaSeis Network
+
+I currently operate a NexaSeis server and run my own citizen-science seismic network:
+
+> **Citation:** Dominik Stempel. (2026). *NexaSeis Collaborative Network* [Data set]. International Federation of Digital Seismograph Networks. https://doi.org/10.7914/fa5t-3w59
+
+If you want a plug-and-play solution without managing server software yourself, I would be happy to host your station's data on my server network! 
+
+To add your station to the network, reach out to me via:
+* **Discord:** Join the community server linked on [nexaseis.domiko.dev](https://nexaseis.domiko.dev)
+* **Email:** [mail@domiko.dev](mailto:mail@domiko.dev)
+
+> [!WARNING]
+> Hosted server availability is maintained on a best-effort basis. If server access is interrupted, you may need to host your station software locally.
+
+---
+
+> [!NOTE]
+> Detailed physical assembly steps and firmware flashing instructions will be added in a future update!
