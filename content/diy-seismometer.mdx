@@ -45,30 +45,55 @@ Because I struggled with building one myself, I won't cover it directly in this 
 > You can build a multi-channel setup! For example, you can use a geophone for the vertical axis and an accelerometer module for horizontal axes.
 
 ---
-
 ## Required Components & Wiring
 
-Now that we've covered sensors, what else do you need? The rest of your hardware depends on what you already own and your overall goals.
+Once you’ve picked out a sensor, you’ll need a few extra parts to get everything up and running.
 
-### Analog-to-Digital Converter (ADC)
-An ADC converts the analog signals from your sensor into digital data for your computer.
+### Microcontroller & ADC
+* **Microcontroller:** Grab an **ESP32**. They’re cheap, fast enough for SPI, and have built-in Wi-Fi and Bluetooth.
+* **Analog-to-Digital Converter (ADC):** If you're using a passive sensor like a geophone, you’ll need a separate ADC to convert those analog signals into data your computer can read. 
+  * A **24-bit ADC** handles most setups great-I recommend the **ADS1256**.
+  * If you want maximum sensitivity and lower noise, go with a **32-bit ADC**.
+  * *Note: If you’re using an accelerometer like the LSM6DS3 or ADXL355, it already has an ADC built in, so you can connect it straight to your ESP32.*
 
-* Some accelerometers (including the ones recommended above) have built-in ADCs.
-* For standalone sensors like geophones, you will need a separate ADC. A **24-bit ADC** is sufficient for most setups—I personally recommend the **ADS1256**.
-* If you want to maximize resolution and detection range, you can opt for a **32-bit ADC**.
+### Wires & Prototyping
+* **Jumper Wires & Breadboard:** Essential for quick bench testing before soldering.
+* **Ethernet Cable Wires:** Stripping out twisted wire pairs from a standard Cat5e or Cat6 ethernet cable works surprisingly well for longer sensor runs since it cuts down on noise.
 
 ### Pinout Mapping (ESP32 + ADS1256)
-If you are using an ESP32 microcontroller with an ADS1256 ADC, here is the default pin mapping used in firmware configuration:
 
-| ESP32 Pin | Function / ADS1256 Pin |
-| :--- | :--- |
-| **GPIO 18** | SPI Clock (`SCK`) |
-| **GPIO 19** | SPI Master In / Slave Out (`MISO`) |
-| **GPIO 23** | SPI Master Out / Slave In (`MOSI`) |
-| **GPIO 5** | Chip Select (`CS`) |
-| **GPIO 16** | Data Ready (`DRDY`) |
-| *Not Connected* | Reset (`RST`) |
-| *Not Connected* | Sync (`SYNC`) |
+If you're using an ESP32 alongside an ADS1256 ADC, hook them up using this default pinout:
+
+| ESP32 Pin | ADS1256 Pin | Function | Notes |
+| :--- | :--- | :--- | :--- |
+| **5V / VIN** | **5V / VCC** | Power | Main 5V power supply |
+| **GND** | **GND** | Ground | Common ground |
+| **GPIO 18** | **SCLK** | SPI Clock | Hardware SPI Clock |
+| **GPIO 23** | **DIN** | SPI Data In (`MOSI`) | Master Out / Slave In |
+| **GPIO 19** | **DOUT** | SPI Data Out (`MISO`) | Master In / Slave Out |
+| **GPIO 16** | **DRDY** | Data Ready | Interrupt pin |
+| **GPIO 5** | **CS** | Chip Select | Active-low SPI select |
+| **5V / VIN** | **PDWN** | Power Down / Reset | Tied HIGH to keep the module awake |
+| *Unconnected* | **SYNC** | Sync | Leave unconnected |
+
+**Connecting Your Sensor to the ADC:**
+* Sensor **(+)** goes to **AIN0**
+* Sensor **(-)** goes to **AIN1**
+
+---
+
+### Flashing the Firmware
+
+The easiest way to compile and flash your firmware is using **VS Code** with the **PlatformIO** extension installed.
+
+I’ve put together pre-built firmware for these setups:
+* **[NexaSeis - 1 Axis Channel (ADS1256)](https://github.com/Domiko7/NexaSeis/tree/main/seismometer/NX-1D)**
+* **[NexaSeis - LSM6DS3 Accelerometer (not tested yet)](https://github.com/Domiko7/NexaSeis/tree/main/seismometer/NX-LSM6DS3)**
+* **[AnyShake - 1 Axis Channel](https://github.com/Domiko7/ESP32-anyshake-explorer)**
+
+If you're using a different microcontroller or a custom setup, writing your own code isn't too hard-just make sure to follow the data structure defined in `/include/utils/packet.h`.
+
+For complete code files and instructions, check out the [NexaSeis GitHub repository](https://github.com/Domiko7/NexaSeis/tree/main/seismometer). If you run into any issues along the way, feel free to text me on discord or email me!
 
 ---
 
