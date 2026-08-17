@@ -90,7 +90,21 @@ const BlogPost = async ({ params }: { params: Promise<{ slug: string }> }) => {
         
         <header className="mb-8">
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">{meta.title}</h1>
-          <p className="text-gray-500 text-sm">{meta.date}</p>
+          <p className="text-gray-500 text-sm mb-4">{meta.date}</p>
+
+          {meta.tags && meta.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {meta.tags.map((tag: string) => (
+                <Link
+                  key={tag}
+                  href={`/blog?tag=${encodeURIComponent(tag)}`}
+                  className="bg-gray-800 text-pink-400 px-1.5 py-0.5 rounded text-sm font-mono hover:underline"
+                >
+                  #{tag}
+                </Link>
+              ))}
+            </div>
+          )}
         </header>
 
         <article className="prose prose-slate dark:prose-invert max-w-none">
